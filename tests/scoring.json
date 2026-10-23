@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "weight_policy": {
+    "version": 1,
+    "basis": "business_priority",
+    "core_min_share": 0.5
+  },
+  "gate_tests": [
+    "test_outputs.py::test_branching_network_recovery_closes_all_phases"
+  ],
+  "tests": {
+    "test_outputs.py::test_three_rooted_trees_are_recovered": {
+      "weight": 0.3,
+      "priority": "core",
+      "rationale": "三条相线从独立相根恢复到客户负荷，是分支馈线档案可以交付的核心结构判据。"
+    },
+    "test_outputs.py::test_branch_and_leaf_share_the_same_parent": {
+      "weight": 0.2,
+      "priority": "core",
+      "rationale": "同一上游节点接出两条下游支路时仍要唯一恢复，决定支线改造后的真实网络能否复原。"
+    },
+    "test_outputs.py::test_maximum_shared_loss_coefficient_is_accepted": {
+      "weight": 0.1,
+      "priority": "core",
+      "rationale": "共用单位长度损耗系数上边界必须可解，否则高损耗老旧线段会被排除在网络档案外。"
+    },
+    "test_outputs.py::test_minimum_shared_loss_coefficient_is_accepted": {
+      "weight": 0.09,
+      "priority": "core",
+      "rationale": "共用单位长度损耗系数下边界必须可解，覆盖新建短线的低损耗支线场景。"
+    },
+    "test_outputs.py::test_ambiguous_forest_is_reported": {
+      "weight": 0.03,
+      "priority": "boundary",
+      "rationale": "重复表计和相同电量可能形成多组森林，不能把不可判定网络发布成唯一档案。"
+    },
+    "test_outputs.py::test_shared_loss_coefficient_over_limit_is_refused": {
+      "weight": 0.02,
+      "priority": "boundary",
+      "rationale": "超出公开范围的线路损耗系数不能通过强制拟合进入结果。"
+    },
+    "test_outputs.py::test_period_minimum_is_accepted": {
+      "weight": 0.03,
+      "priority": "boundary",
+      "rationale": "单时段采集仍要支持分支森林和共用系数的唯一恢复，覆盖公开下界。"
+    },
+    "test_outputs.py::test_period_over_limit_is_refused": {
+      "weight": 0.01,
+      "priority": "boundary",
+      "rationale": "超过公开时段上限会破坏验证时限，输入层必须明确拦截。"
+    },
+    "test_outputs.py::test_meter_over_limit_is_refused": {
+      "weight": 0.01,
+      "priority": "boundary",
+      "rationale": "表计数量越界会让客户分组失去时限保证，不能静默进入搜索。"
+    },
+    "test_outputs.py::test_transformer_over_limit_is_refused": {
+      "weight": 0.01,
+      "priority": "boundary",
+      "rationale": "变压器数量越界会扩大父节点组合空间，必须在接口处拒收。"
+    },
+    "test_outputs.py::test_invalid_transformer_id_is_refused": {
+      "weight": 0.005,
+      "priority": "schema",
+      "rationale": "变压器编号格式错误会让父节点与相别引用失效，必须在解析阶段拒绝。"
+    },
+    "test_outputs.py::test_service_point_one_is_accepted": {
+      "weight": 0.005,
+      "priority": "recovery",
+      "rationale": "单个服务点属于合法下界，覆盖一台变压器只接一块表的支线末端。"
+    },
+    "test_outputs.py::test_service_point_over_limit_is_refused": {
+      "weight": 0.005,
+      "priority": "schema",
+      "rationale": "单台变压器承接三块表会破坏公开分组基数，必须在校验阶段拒绝。"
+    },
+    "test_outputs.py::test_energy_tolerance_over_limit_is_refused": {
+      "weight": 0.01,
+      "priority": "schema",
+      "rationale": "电量对齐容差越界会放宽变压器分组条件，需要在外层校验中拦截。"
+    },
+    "test_outputs.py::test_missing_span_is_refused": {
+      "weight": 0.03,
+      "priority": "schema",
+      "rationale": "候选电缆段集合不完整时无法证明拓扑唯一，必须在建模前拒收。"
+    },
+    "test_outputs.py::test_duplicate_span_is_refused": {
+      "weight": 0.03,
+      "priority": "schema",
+      "rationale": "同一父子的重复电缆段会污染长度和损耗口径，必须保持单值。"
+    },
+    "test_outputs.py::test_span_length_over_limit_is_refused": {
+      "weight": 0.005,
+      "priority": "schema",
+      "rationale": "电缆长度越界会放大线损，必须在网络恢复前按公开值域拒收。"
+    },
+    "test_outputs.py::test_duplicate_meter_id_is_refused": {
+      "weight": 0.01,
+      "priority": "schema",
+      "rationale": "重复表号会破坏客户表与变压器的单值归属，必须在解析阶段终止。"
+    },
+    "test_outputs.py::test_invalid_meter_id_is_refused": {
+      "weight": 0.005,
+      "priority": "schema",
+      "rationale": "表号格式错误会让客户档案无法关联到变压器窗口电量。"
+    },
+    "test_outputs.py::test_profile_wrong_length_is_refused": {
+      "weight": 0.005,
+      "priority": "schema",
+      "rationale": "表计历程长度不齐会让逐时段功率和损耗失去对齐关系。"
+    },
+    "test_outputs.py::test_boolean_meter_reading_is_refused": {
+      "weight": 0.01,
+      "priority": "schema",
+      "rationale": "布尔值混入电量会制造虚假负荷和损耗，类型边界必须拒绝。"
+    },
+    "test_outputs.py::test_negative_channel_reading_is_refused": {
+      "weight": 0.005,
+      "priority": "schema",
+      "rationale": "负首端功率不属于公开通道值域，进入闭合比较会掩盖真实网络。"
+    },
+    "test_outputs.py::test_tolerance_over_limit_is_refused": {
+      "weight": 0.005,
+      "priority": "schema",
+      "rationale": "测量容差越界会放宽网络闭合条件，让错误分支树通过验收。"
+    },
+    "test_outputs.py::test_extra_top_level_key_is_refused": {
+      "weight": 0.01,
+      "priority": "schema",
+      "rationale": "未声明顶层字段会让输入版本失去确定性，必须按精确字段集合处理。"
+    },
+    "test_outputs.py::test_extra_phase_channel_is_refused": {
+      "weight": 0.01,
+      "priority": "schema",
+      "rationale": "多余相别会改变三相网络方程维度，输入层需要直接拒绝。"
+    },
+    "test_outputs.py::test_wrong_schema_is_refused": {
+      "weight": 0.005,
+      "priority": "schema",
+      "rationale": "错误 schema 会按旧版线性馈线解释分支记录，必须拒绝。"
+    },
+    "test_outputs.py::test_duplicate_transformer_id_is_refused": {
+      "weight": 0.005,
+      "priority": "schema",
+      "rationale": "重复变压器编号会破坏父节点与相序的唯一关联，必须拒收。"
+    },
+    "test_outputs.py::test_no_feasible_tree_is_refused": {
+      "weight": 0.02,
+      "priority": "recovery",
+      "rationale": "无可行分支树时不能伪造档案，必须保持无输出并明确报告不可恢复。"
+    },
+    "test_outputs.py::test_output_is_compact_sorted_and_newline_terminated": {
+      "weight": 0.01,
+      "priority": "supporting",
+      "rationale": "稳定序列化保证网络档案发布与下游逐字节比对不会产生格式漂移。"
+    },
+    "test_outputs.py::test_repeated_run_has_identical_bytes": {
+      "weight": 0.01,
+      "priority": "recovery",
+      "rationale": "重复运行一致是故障复盘和网络档案重放可采信的基本恢复要求。"
+    }
+  }
+}
