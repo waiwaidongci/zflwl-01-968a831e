@@ -10,7 +10,7 @@
   ],
   "tests": {
     "test_outputs.py::test_three_rooted_trees_are_recovered": {
-      "weight": 0.3,
+      "weight": 0.26,
       "priority": "core",
       "rationale": "三条相线从独立相根恢复到客户负荷，是分支馈线档案可以交付的核心结构判据。"
     },
@@ -18,6 +18,11 @@
       "weight": 0.2,
       "priority": "core",
       "rationale": "同一上游节点接出两条下游支路时仍要唯一恢复，决定支线改造后的真实网络能否复原。"
+    },
+    "test_outputs.py::test_fifteen_minute_profiles_use_quarter_hour_energy": {
+      "weight": 0.04,
+      "priority": "core",
+      "rationale": "15 分钟平均功率必须按 0.25 小时换算窗口电量，否则客户表无法与变压器采集量正确对齐。"
     },
     "test_outputs.py::test_maximum_shared_loss_coefficient_is_accepted": {
       "weight": 0.1,

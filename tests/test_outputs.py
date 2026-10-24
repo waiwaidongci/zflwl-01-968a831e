@@ -12,14 +12,24 @@ import pytest
 
 
 ENTRY = os.environ.get("FEEDER_SOLVER", "/app/predict.py")
+
+SAFE_ENV = {
+    "PATH": "/usr/bin:/bin",
+    "HOME": "/tmp",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONHASHSEED": "0",
+}
 PHASES = ("A", "B", "C")
 
 
 def _run(payload: Path, output: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, ENTRY, str(payload), str(output)],
+        [sys.executable, "-S", "-P", "-B", ENTRY, str(payload), str(output)],
         text=True,
         capture_output=True,
+        env=SAFE_ENV,
         timeout=90,
         check=False,
     )
@@ -303,6 +313,30 @@ def test_three_rooted_trees_are_recovered(tmp_path: Path) -> None:
     assert result["losses_kw"] == pytest.approx(
         expected["losses_kw"], abs=0.000001
     )
+
+
+def test_fifteen_minute_profiles_use_quarter_hour_energy(tmp_path: Path) -> None:
+    """题面：「15 分钟折合 0.25 小时」"""
+    # case_id: NET-ENERGY-QUARTER-01 NET-ENERGY-WINDOW-01
+    payload, expected = _small_case()
+    for transformer, members in zip(
+        payload["transformers"], [[0, 1], [2, 3], [4, 5]]
+    ):
+        expected_kwh = 0.25 * math.fsum(
+            math.fsum(payload["meters"][member]["profile"]) for member in members
+        )
+        assert expected_kwh > 0.0
+        assert transformer["energy_kwh"] == pytest.approx(
+            expected_kwh, abs=0.000001
+        )
+    source = tmp_path / "input.json"
+    output = tmp_path / "result.json"
+    _write_json(source, payload)
+    completed = _run(source, output)
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert completed.returncode == 0
+    assert result["meter_to_transformer"] == expected["meter_to_transformer"]
+    assert result["connections"] == expected["connections"]
 
 
 def test_ambiguous_forest_is_reported(tmp_path: Path) -> None:
