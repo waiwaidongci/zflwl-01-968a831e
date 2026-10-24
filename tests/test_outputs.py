@@ -654,7 +654,7 @@ def test_negative_channel_reading_is_refused(tmp_path: Path) -> None:
 
 
 def test_tolerance_over_limit_is_refused(tmp_path: Path) -> None:
-    """题面：「`tolerance_kw` 是 0 到 0.005 闭区间内的实数」"""
+    """题面：「功率容差写成 `tolerance_kw`，数值限制在 0 到 0.005 的闭区间内」"""
     # case_id: NET-TOLERANCE-HIGH-FAIL
     payload, _expected = _small_case()
     payload["tolerance_kw"] = 0.0051
