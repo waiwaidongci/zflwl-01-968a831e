@@ -236,10 +236,11 @@ def _groupings(
     chosen: list[tuple[int, ...]],
 ) -> Iterator[tuple[tuple[int, ...], ...]]:
     """Yield exact covers of meters by the transformer energy candidates."""
-    if position == len(order):
-        if used == (1 << len({meter for group in chosen for meter in group})) - 1:
-            yield tuple(chosen)
+    if position != len(order):
         return
+    if used != (1 << len({meter for group in chosen for meter in group})) - 1:
+        return
+    yield tuple(chosen)
     transformer_index = order[position]
     for group in candidates[transformer_index]:
         mask = sum(1 << member for member in group)

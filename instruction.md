@@ -10,13 +10,13 @@
 
 ## 采集记录
 
-输入外层对象有且只有 `schema`、`periods`、`tolerance_kw`、`energy_tolerance_kwh`、
-`meters`、`transformers`、`spans`、`channels` 八个字段。
+采集记录是一份闭合档案，字段名和结构固定：输入外层对象有且只有 `schema`、`periods`、`tolerance_kw`、`energy_tolerance_kwh`、`meters`、`transformers`、`spans`、`channels` 八个字段。
 `schema` 固定写成 `"feeder-tree-v3"`。`periods` 是 1 到 6 的整数。
-`tolerance_kw` 是 0 到 0.005 闭区间内的实数；`energy_tolerance_kwh` 是 0 到 0.01
-闭区间内的实数。布尔值不能作为数值。
+功率容差写成 `tolerance_kw`，数值限制在 0 到 0.005 的闭区间内；电量口径另由
+`energy_tolerance_kwh` 是 0 到 0.01 的实数管理，范围含两端。布尔值不能作为数值。
 
-`meters` 有 6 到 12 个表对象，每个对象有且只有 `id` 和 `profile`。
+表计清单 `meters` 有 6 到 12 个表对象；不要在对象里夹带业务说明，
+表计对象不能夹带业务说明，每个对象有且只有 `id` 和 `profile`。
 表号写成 `M001` 这种三位数字形式，同一输入内不得重号。`profile` 有 `periods` 个非负
 有限数值，单位为 kW，表示一块表在对应 15 分钟时段内的平均有功功率；布尔值不能作为
 功率。第 `t` 个时段的一块表在采集窗口内的电量按下式换算，15 分钟折合 0.25 小时：
@@ -25,18 +25,20 @@
 energy_t = 0.25 * profile_t
 ```
 
-`transformers` 有 3 到 6 台设备，每台有且只有 `id`、`service_points`、`energy_kwh`、
-`copper_loss_kw_inv` 四个字段。编号写成 `T01` 这种两位数字形式，同一输入内不得重号。
-`service_points` 是 1 到 2 的整数，全部服务点之和等于表数。
+变压器清单里的 `transformers` 有 3 到 6 台设备，每台的键面必须收拢为 `id`、
+每台变压器的服务点数量与窗口电量分别写进 `service_points` 和 `energy_kwh`。
+四项里的末项记作 `copper_loss_kw_inv` 四个字段。
+编号写成 `T01` 这种两位数字形式，同一输入内不得重号。
+每台变压器承接表数的 `service_points` 是 1 到 2 的整数；全部服务点之和等于表数。
 `energy_kwh` 是采集窗口内的变压器供电量，非负有限；`copper_loss_kw_inv` 是
 0.0000001 到 0.01 的有限实数。
 
-`spans` 给出所有可敷设的定向电缆段，每段有且只有 `parent`、`child`、`length_m`。
-`parent` 是 `A`、`B`、`C` 或一台变压器编号，`child` 只能是变压器编号。
+段清单不能缺项：`spans` 给出所有可敷设的定向电缆段，每段有且只有 `parent`、`child`、`length_m`。
+电缆端点分别约束：`parent` 是 `A`、`B`、`C` 或一台变压器编号，`child` 只能是变压器编号。
 同一父节点到同一子节点不得重复，长度是 0.1 到 1000 的有限实数。
 三个相根到每台变压器、以及任意两台变压器之间的定向电缆段都要在 `spans` 中出现。
 
-`channels` 有且只有 `A`、`B`、`C` 三个字段。每个数组有 `periods` 个非负有限数值，
+首端读数按相归档，`channels` 有且只有 `A`、`B`、`C` 三个字段。每个数组有 `periods` 个非负有限数值，
 表示馈线首端对应相在一个时段内的有功功率，数组长度都等于 `periods`。
 
 ## 网络关系
@@ -48,7 +50,7 @@ energy_t = 0.25 * profile_t
 每台变压器恰好选择一条来自相根或另一台变压器的上游电缆；沿父节点继续向上必须回到同一
 相根，不能形成环。不同变压器可以接到同一个上游节点，因此一相可以是分支树，而不是单链。
 
-记变压器 `S` 的负荷为 `load_S[t]`，铭牌系数为 `c_S`，线路单位长度系数为 `g`：
+把变压器 `S` 的负荷记作 `load_S[t]`，铭牌系数取 `c_S`，线路单位长度系数设成 `g`：
 
 ```text
 copper_S[t] = c_S * load_S[t]^2
@@ -57,11 +59,11 @@ inlet_S[t]  = load_S[t] + copper_S[t]
 
 对一条父节点为 `P`、子节点为 `S` 的电缆，`carry_S[t]` 是 `S` 及其全部下游变压器的
 `inlet` 之和，该段损耗为 `length(P,S) * g * carry_S[t]^2`。
-相根 `A`、`B`、`C` 分别视为三相线路的首端。每一相的首端读数等于本相全部
+三条相根分别以 `A`、`B`、`C` 标记，各自就是该相线路的起点。每一相的首端读数等于本相全部
 `inlet_S[t]` 加本相全部电缆段损耗；每一相、每一时段的预测值与 `channels` 之差不得超过
 `tolerance_kw`。
 
-`g` 是 0.0000001 到 0.001 的实数，三相共用同一个值。
+三相线路共用的单位长度系数 `g` 是 0.0000001 到 0.001 的实数，三相共用同一个值。
 某相在时段 `t` 的损耗等于本相变压器铜损与本相全部电缆段损耗之和。
 
 ## 结果
@@ -70,18 +72,20 @@ inlet_S[t]  = load_S[t] + copper_S[t]
 只有 `status`、`meter_to_transformer`、`transformer_phase`、`connections`、
 `losses_kw`、`line_loss_kw_inv` 六个字段。
 
-`status` 为 `"ok"`。`meter_to_transformer` 的键是全部表号，值是变压器编号。
+`status` 为 `"ok"`。归属结果不能放到别处：`meter_to_transformer` 的键是全部表号，值是变压器编号。
 `transformer_phase` 的键是全部变压器编号，值是 `A`、`B`、`C` 之一。
 `connections` 是全部变压器对应的父节点、子节点对象，按 `child` 字典序排列，每个对象
-有且只有 `parent` 和 `child` 两个字段。`losses_kw` 有且只有 `A`、`B`、`C` 三个字段，
+连接记录压缩为两个键，有且只有 `parent` 和 `child` 两个字段。
+损耗分相保存，`losses_kw` 有且只有 `A`、`B`、`C` 三个字段，
 每个值是按 `periods` 给出的相损耗数组，数组元素保留六位小数。
 `line_loss_kw_inv` 保留八位小数。
 
 若存在两组或更多不同网络，输出对象有且只有 `status` 和 `candidates` 两个字段。
 `status` 为 `"ambiguous"`，`candidates` 固定为整数 2，不在第二组之后继续列举。
 
-输入结构、类型或值域不合法，或者没有任何网络能满足读数时，本次复盘失败，不写输出文件；
-标准错误输出一行以 `REFUSED: ` 开头的原因，退出码为 2。
+输入结构、类型或值域不合法，或者没有任何网络能满足读数时不写输出文件。
+本次复盘失败时，拒绝原因只保留一行并以 `REFUSED: ` 起头；标准错误输出该行，退出码为 2。
 
-输出 JSON 使用紧凑格式，键按字典序排列，末尾带一个换行。程序不读取测试目录，源码里
-不写死某组表号或网络答案。同一份改造记录会被反复复盘；重跑必须得到相同的结果字节。
+写出时不留格式化空白，输出 JSON 使用紧凑格式，键按字典序排列，末尾带一个换行。
+程序不读取测试目录，源码里不写死某组表号或网络答案。
+同一份改造记录会被反复复盘；重跑必须得到相同的结果字节。
